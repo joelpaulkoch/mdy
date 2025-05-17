@@ -4,6 +4,7 @@ defmodule MDy.Application do
   @moduledoc false
 
   use Application
+  require Logger
 
   @impl true
   def start(_type, _args) do
@@ -16,12 +17,14 @@ defmodule MDy.Application do
     path =
       case args do
         [] -> File.cwd!()
-        [path] -> path
+        [path] -> Path.expand(path)
         _else -> raise "at max. one positional argument allowed: PATH"
       end
 
+    Logger.info("Starting at #{path}")
+
     children = [
-      {Bandit, plug: MDy.Plug, scheme: :http, port: port}
+      {Bandit, plug: {MDy.Plug, path: path}, scheme: :http, port: port}
     ]
 
     opts = [strategy: :one_for_one, name: MDy.Supervisor]

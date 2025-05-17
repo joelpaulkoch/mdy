@@ -13,9 +13,9 @@ defmodule MDy.Plug do
     Path.extname(path) |> String.ends_with?("html")
   end
 
-  def call(conn, _opts) do
-    cwd = File.cwd!()
-    path = Path.join(cwd, conn.request_path)
+  def call(conn, opts) do
+    root = Keyword.get(opts, :path, File.cwd!())
+    path = Path.join(root, conn.request_path)
 
     with {:ok, content} <- File.read(path),
          {:ok, html} <- render_html(content, path) do
@@ -30,17 +30,16 @@ defmodule MDy.Plug do
   end
 
   defp render_html(content, path) do
-    html =
-      cond do
-        markdown?(path) ->
-          {:ok, Earmark.as_html!(content) |> append_mermaid() |> append_reload()}
+    cond do
+      markdown?(path) ->
+        {:ok, Earmark.as_html!(content) |> append_mermaid() |> append_reload()}
 
-        html?(path) ->
-          {:ok, append_reload(content)}
+      html?(path) ->
+        {:ok, append_reload(content)}
 
-        true ->
-          {:error, {:not_implemented, "no markdown or html, don't know what to do"}}
-      end
+      true ->
+        {:error, {:not_implemented, "no markdown or html, don't know what to do"}}
+    end
   end
 
   defp append_mermaid(html) do
