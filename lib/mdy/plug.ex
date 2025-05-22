@@ -46,14 +46,34 @@ defmodule MDy.Plug do
   defp render_html(content, path, port) do
     cond do
       markdown?(path) ->
-        {:ok, Earmark.as_html!(content) |> append_mermaid() |> append_reload(port)}
+        html =
+          content
+          |> Earmark.as_html!()
+          |> prepend_style()
+          |> append_mermaid()
+          |> append_reload(port)
+
+        {:ok, html}
 
       html?(path) ->
-        {:ok, append_reload(content, port)}
+        html =
+          content
+          |> prepend_style()
+          |> append_reload(port)
+
+        {:ok, html}
 
       true ->
         {:error, {:not_implemented, "no markdown or html, don't know what to do"}}
     end
+  end
+
+  defp prepend_style(html) do
+    """
+    <!-- Fluid viewport -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.fluid.classless.min.css" >
+    """ <>
+      html
   end
 
   defp append_mermaid(html) do
