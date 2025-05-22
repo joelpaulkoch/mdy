@@ -25,6 +25,8 @@ defmodule MDy.MixProject do
     [
       {:earmark, "~> 1.4"},
       {:plug, "~> 1.17"},
+      {:websock_adapter, "~> 0.5.8"},
+      {:file_system, "~> 1.0"},
       {:bandit, "~> 1.6"},
       {:burrito, "~> 1.0"}
     ]

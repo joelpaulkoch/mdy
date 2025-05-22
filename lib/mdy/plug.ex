@@ -14,11 +14,25 @@ defmodule MDy.Plug do
   end
 
   def call(conn, opts) do
+    port = Keyword.get(opts, :port, MDy.Application.default_port())
     root = Keyword.get(opts, :path, File.cwd!())
     path = Path.join(root, conn.request_path)
 
+    case conn.request_path do
+      "/websocket" -> upgrade_to_websocket(conn)
+      _else -> render_file(conn, path, port)
+    end
+  end
+
+  defp upgrade_to_websocket(conn) do
+    conn
+    |> WebSockAdapter.upgrade(MDy.WebSocket, [], timeout: :infinity)
+    |> halt()
+  end
+
+  defp render_file(conn, path, port) do
     with {:ok, content} <- File.read(path),
-         {:ok, html} <- render_html(content, path) do
+         {:ok, html} <- render_html(content, path, port) do
       conn
       |> put_resp_content_type("text/html")
       |> send_resp(200, html)
@@ -29,13 +43,13 @@ defmodule MDy.Plug do
     end
   end
 
-  defp render_html(content, path) do
+  defp render_html(content, path, port) do
     cond do
       markdown?(path) ->
-        {:ok, Earmark.as_html!(content) |> append_mermaid() |> append_reload()}
+        {:ok, Earmark.as_html!(content) |> append_mermaid() |> append_reload(port)}
 
       html?(path) ->
-        {:ok, append_reload(content)}
+        {:ok, append_reload(content, port)}
 
       true ->
         {:error, {:not_implemented, "no markdown or html, don't know what to do"}}
@@ -61,14 +75,25 @@ defmodule MDy.Plug do
       """
   end
 
-  defp append_reload(html) do
+  defp append_reload(html, port) do
     html <>
       """
       <script>
+        sock = new WebSocket("ws://localhost:#{port}/websocket")
+
         function reloadPage() {
           window.location.reload();
         }
-        setInterval(reloadPage, 10000);
+
+        sock.addEventListener("message", (event) => {
+            console.log(event);
+            if (event.data === "reload") {
+              sock.close(1000, "reloading");
+              reloadPage();
+            };
+          }
+        )
+
       </script>
       """
   end
