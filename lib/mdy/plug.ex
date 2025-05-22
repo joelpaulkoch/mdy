@@ -1,5 +1,6 @@
 defmodule MDy.Plug do
   import Plug.Conn
+  require EEx
 
   def init(options) do
     options
@@ -46,75 +47,72 @@ defmodule MDy.Plug do
   defp render_html(content, path, port) do
     cond do
       markdown?(path) ->
-        html =
-          content
-          |> Earmark.as_html!()
-          |> prepend_style()
-          |> append_mermaid()
-          |> append_reload(port)
+        html = Earmark.as_html!(content)
 
-        {:ok, html}
+        {:ok, render(html: html, scripts: [mermaid(), reload(port)])}
 
       html?(path) ->
-        html =
-          content
-          |> prepend_style()
-          |> append_reload(port)
-
-        {:ok, html}
+        {:ok, render(html: content, scripts: [reload(port)])}
 
       true ->
         {:error, {:not_implemented, "no markdown or html, don't know what to do"}}
     end
   end
 
-  defp prepend_style(html) do
+  EEx.function_from_string(
+    :defp,
+    :render,
     """
-    <!-- Fluid viewport -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.fluid.classless.min.css" >
-    """ <>
-      html
+    <head>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.fluid.classless.min.css" >
+    </head>
+
+    <%= @html %>
+
+    <%= for script <- @scripts do %>
+      <%= script %>
+    <% end %>
+    """,
+    [:assigns]
+  )
+
+  defp mermaid() do
+    """
+    <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+    const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: isDarkMode ? "dark" : "default"
+    });
+
+    await mermaid.run();
+
+    </script>
+    """
   end
 
-  defp append_mermaid(html) do
-    html <>
-      """
-      <script type="module">
-      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  defp reload(port) do
+    """
+    <script>
+      sock = new WebSocket("ws://localhost:#{port}/websocket")
 
-      const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      function reloadPage() {
+        window.location.reload();
+      }
 
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: isDarkMode ? "dark" : "default"
-      });
-
-      await mermaid.run();
-
-      </script>
-      """
-  end
-
-  defp append_reload(html, port) do
-    html <>
-      """
-      <script>
-        sock = new WebSocket("ws://localhost:#{port}/websocket")
-
-        function reloadPage() {
-          window.location.reload();
+      sock.addEventListener("message", (event) => {
+          console.log(event);
+          if (event.data === "reload") {
+            sock.close(1000, "reloading");
+            reloadPage();
+          };
         }
+      )
 
-        sock.addEventListener("message", (event) => {
-            console.log(event);
-            if (event.data === "reload") {
-              sock.close(1000, "reloading");
-              reloadPage();
-            };
-          }
-        )
-
-      </script>
-      """
+    </script>
+    """
   end
 end
