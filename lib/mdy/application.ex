@@ -21,7 +21,7 @@ defmodule MDy.Application do
         _else -> raise "at max. one positional argument allowed: PATH"
       end
 
-    Logger.info("Starting at #{path}")
+    Logger.info("Serves your files under #{path} at http://localhost:#{port}")
 
     case FileSystem.start_link(dirs: [path], name: MDy.Monitor) do
       {:ok, _pid} ->
