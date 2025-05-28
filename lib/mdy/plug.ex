@@ -67,7 +67,9 @@ defmodule MDy.Plug do
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.fluid.classless.min.css" >
     </head>
 
-    <%= @html %>
+    <main>
+      <%= @html %>
+    </main>
 
     <%= for script <- @scripts do %>
       <%= script %>
