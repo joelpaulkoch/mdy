@@ -7,12 +7,6 @@ defmodule MDy.Router do
   plug(:match)
   plug(:dispatch)
 
-  get "/" do
-    conn
-    |> put_resp_content_type("text/html")
-    |> send_resp(200, "hello")
-  end
-
   get "/websocket" do
     conn
     |> WebSockAdapter.upgrade(MDy.WebSocket, [], timeout: :infinity)
@@ -22,7 +16,9 @@ defmodule MDy.Router do
   forward("/files/", to: MDy.Plug)
 
   match _ do
-    send_resp(conn, 404, "oops")
+    conn
+    |> put_resp_header("location", "/files/")
+    |> send_resp(303, "redirecting..")
   end
 
   defp assign_root_path(conn, opts) do
