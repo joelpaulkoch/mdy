@@ -14,21 +14,11 @@ defmodule MDy.Plug do
     Path.extname(path) |> String.ends_with?("html")
   end
 
-  def call(conn, opts) do
-    port = Keyword.get(opts, :port, MDy.Application.default_port())
-    root = Keyword.get(opts, :path, File.cwd!())
-    path = Path.join(root, conn.request_path)
+  def call(conn, _opts) do
+    path = Path.join([conn.private.path | conn.path_info])
+    port = conn.private.port
 
-    case conn.request_path do
-      "/websocket" -> upgrade_to_websocket(conn)
-      _else -> render_file(conn, path, port)
-    end
-  end
-
-  defp upgrade_to_websocket(conn) do
-    conn
-    |> WebSockAdapter.upgrade(MDy.WebSocket, [], timeout: :infinity)
-    |> halt()
+    render_file(conn, path, port)
   end
 
   defp render_file(conn, path, port) do
@@ -38,9 +28,17 @@ defmodule MDy.Plug do
       |> put_resp_content_type("text/html")
       |> send_resp(200, html)
     else
-      {:error, {:not_implemented, message}} -> send_resp(conn, 501, message)
-      {:error, :enoent} -> send_resp(conn, 404, "file does not exist")
-      {:error, error} -> send_resp(conn, 500, "#{error}")
+      {:error, {:not_implemented, message}} ->
+        html = render(error: message)
+        send_resp(conn, 501, html)
+
+      {:error, :enoent} ->
+        html = render(error: "file does not exist")
+        send_resp(conn, 404, html)
+
+      {:error, error} ->
+        html = render(error: "#{inspect(error)}")
+        send_resp(conn, 500, html)
     end
   end
 
@@ -68,11 +66,17 @@ defmodule MDy.Plug do
     </head>
 
     <main>
-      <%= @html %>
+      <%= if assigns[:error] do %>
+        <%= @error %>
+      <% else %>
+        <%= @html %>
+      <% end %>
     </main>
 
-    <%= for script <- @scripts do %>
-      <%= script %>
+    <%= if assigns[:scripts] do %>
+      <%= for script <- @scripts do %>
+        <%= script %>
+      <% end %>
     <% end %>
     """,
     [:assigns]

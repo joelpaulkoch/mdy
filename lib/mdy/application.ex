@@ -21,7 +21,7 @@ defmodule MDy.Application do
         _else -> raise "at max. one positional argument allowed: PATH"
       end
 
-    Logger.info("Serves your files under #{path} at http://localhost:#{port}")
+    Logger.info("Serves your files under #{path} at http://localhost:#{port}/files/")
 
     case FileSystem.start_link(dirs: [path], name: MDy.Monitor) do
       {:ok, _pid} ->
@@ -32,7 +32,7 @@ defmodule MDy.Application do
     end
 
     children = [
-      {Bandit, plug: {MDy.Plug, path: path, port: port}, scheme: :http, port: port}
+      {Bandit, plug: {MDy.Router, path: path, port: port}, scheme: :http, port: port}
     ]
 
     opts = [strategy: :one_for_one, name: MDy.Supervisor]
