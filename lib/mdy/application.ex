@@ -32,7 +32,7 @@ defmodule MDy.Application do
     end
 
     children = [
-      {Bandit, plug: {MDy.Router, path: path, port: port}, scheme: :http, port: port}
+      {Bandit, plug: {MDy.Router, %{path: path, port: port}}, scheme: :http, port: port}
     ]
 
     opts = [strategy: :one_for_one, name: MDy.Supervisor]

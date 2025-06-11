@@ -19,10 +19,10 @@ defmodule MDy.Plug do
   end
 
   def call(conn, _opts) do
-    path = Path.join([conn.private.path | conn.path_info])
-    port = conn.private.port
+    path = Path.join([conn.assigns.init_opts.path | conn.path_info])
+    port = conn.assigns.init_opts.port
 
-    files = File.ls!(conn.private.path) |> Enum.filter(&supported?/1)
+    files = File.ls!(conn.assigns.init_opts.path) |> Enum.filter(&supported?/1)
 
     render_file(conn, path, port, files)
   end
