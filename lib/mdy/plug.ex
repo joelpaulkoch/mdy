@@ -94,7 +94,7 @@ defmodule MDy.Plug do
           </nav>
         </aside>
 
-        <main class="container-fluid">
+        <main class="container-fluid" style="max-width: 65ch;">
           <%= if assigns[:error] do %>
             <%= @error %>
           <% else %>
