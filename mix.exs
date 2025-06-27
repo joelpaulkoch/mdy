@@ -44,13 +44,13 @@ defmodule MDy.MixProject do
         steps: [:assemble, &Burrito.wrap/1],
         burrito: [
           targets: [
-            macos: [os: :darwin, cpu: :x86_64],
-            macos_arm: [os: :darwin, cpu: :aarch64],
-            linux: [os: :linux, cpu: :x86_64],
-            linux_arm: [os: :linux, cpu: :aarch64],
-            # linux_musl: [os: :linux_musl, cpu: :x86_64],
-            # linux_musl_arm: [os: :linux_musl, cpu: :aarch64],
-            windows: [os: :windows, cpu: :x86_64]
+            macos_x86_64: [os: :darwin, cpu: :x86_64],
+            macos_aarch64: [os: :darwin, cpu: :aarch64],
+            linux_gnu_x86_64: [os: :linux, cpu: :x86_64],
+            linux_gnu_aarch64: [os: :linux, cpu: :aarch64],
+            # linux_musl_x86_64: [os: :linux_musl, cpu: :x86_64],
+            # linux_musl_aarch64: [os: :linux_musl, cpu: :aarch64],
+            windows_x86_64: [os: :windows, cpu: :x86_64]
           ]
         ]
       ]
