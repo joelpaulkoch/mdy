@@ -36,8 +36,31 @@ defmodule MDy.Application do
     ]
 
     opts = [strategy: :one_for_one, name: MDy.Supervisor]
-    Supervisor.start_link(children, opts)
+
+    Supervisor.start_link(children, opts) |> tap(fn _ -> try_open_browser(port) end)
   end
 
   def default_port(), do: 4141
+
+  defp try_open_browser(port) do
+    {command, args} = :os.type() |> command_args()
+
+    try do
+      System.cmd(command, args ++ ["localhost:#{port}"], into: [], stderr_to_stdout: true)
+    rescue
+      _error -> :error
+    end
+  end
+
+  defp command_args({:win32, _}) do
+    {"cmd", ["/c", "start"]}
+  end
+
+  defp command_args({:unix, :darwin}) do
+    {"open", []}
+  end
+
+  defp command_args({:unix, :linux}) do
+    {"xdg-open", []}
+  end
 end
