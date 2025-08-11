@@ -43,12 +43,15 @@ defmodule MDy.Application do
   def default_port(), do: 4141
 
   defp try_open_browser(port) do
-    {command, args} = :os.type() |> command_args()
-
-    try do
-      System.cmd(command, args ++ ["localhost:#{port}"], into: [], stderr_to_stdout: true)
-    rescue
-      _error -> :error
+    if {command, args} = :os.type() |> command_args() do
+      try do
+        System.cmd(command, args ++ ["http://localhost:#{port}"],
+          into: [],
+          stderr_to_stdout: true
+        )
+      rescue
+        _error -> :error
+      end
     end
   end
 
@@ -63,4 +66,6 @@ defmodule MDy.Application do
   defp command_args({:unix, :linux}) do
     {"xdg-open", []}
   end
+
+  defp command_args(_other), do: nil
 end
