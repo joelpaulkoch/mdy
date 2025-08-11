@@ -6,7 +6,7 @@ Build it
 
 ```bash
   mix deps.get
-  mix release
+  MIX_ENV=release mix release
 ```
 
 then run it
